@@ -34,7 +34,7 @@ class Injector
 		# This variable will store how many of the elements in
 		# @args are parameters. Used later to strip parameters off
 		# the main command.
-		num_params = 0
+		num_arguments = 0
 		# Injector#run guarantees that @args.size >= 1 here.
 		(0...@args.size).each do |index|
 			# We will use this flag to keep track of two things - firstly,
@@ -135,12 +135,28 @@ class Injector
 					# one of the arguments was a bare dash. ('-')
 					abort("Argument #{index} malformed!")
 				end
+			else
+				# This argument doesn't start with a dash. Also, because
+				# the param_used flag wasn't set (code couldn't get here if
+				# it was), this isn't a parameter. This means we have reached
+				# the command body.
+
+				num_arguments = index
 			end
 		end
+
+		@args.delete_at(0, num_arguments - 1)
 	end
 
 	def use_parameter(name : String | Char, value : String | Nil)
-		puts "#{name} : #{value || "nil"}"
+		case name
+		when "text", 't'
+			puts "text"
+		when "shell", 's'
+			puts "shell"
+		when "delimiter", 'd'
+			puts "delimiter"
+		end
 	end
 
 	def inject()
