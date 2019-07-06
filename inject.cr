@@ -158,8 +158,19 @@ class Injector
 				break
 			end
 		end
-
-		@args.delete_at(0, num_arguments)
+		
+		# If the last argument starts with a dash, that means that there
+		# was no command string provided. This is okay for things like --version
+		if @args[-1][0] == '-'
+			# We need to delete everything. There was no command.
+			@args = [""]
+			# Note that there's no command to execute.
+			@should_execute = false
+		else
+			# There's still a command, so just prune the args off
+			# the beginning.
+			@args.delete_at(0, num_arguments)
+		end
 	end
 
 	def use_parameter(name : String | Char, value : String | Nil)
@@ -175,6 +186,9 @@ class Injector
 			if value
 				@delimiter = value
 			end
+		when "version", 'v'
+			puts "inject version #{@@version}"
+			puts "written by Seth Hinz (shinzlet)"
 		end
 	end
 
@@ -193,7 +207,8 @@ class Injector
 
 	def exec_command()
 		#system "#{@shell || "/bin/sh"} #{@command_string}"
-		Process.run(command: @shell, args: Array(String).new(1, @command_string), output: STDOUT, error: STDERR)
+		args : Array(String) = ["-c", @command_string]
+		Process.run(command: @shell, args: args, output: STDOUT, error: STDERR)
 	end
 end
 
