@@ -1,4 +1,10 @@
 class Injector
+	@content : String
+	@delimiter : String
+	@command_string : String
+	@shell : String
+	@@version : String = "0.1"
+
 	def initialize(argv : Array(String))
 		# If STDIN is a tty device, that means there was no input,
 		# and it's trying to read from the user input. Instead,
@@ -12,22 +18,28 @@ class Injector
 		
 		# Flags that require a parameter are listed here
 		@param_flags = ['s', 'd']
-		@param_flags_longform = ["shell", "delimeter"]
+		@param_flags_longform = ["shell", "delimiter"]
 
 		# Flags that do not require a parameter are listed here
-		@flags = ['t']
-		@flags_longform = ["text"]
+		@flags = ['t', 'v']
+		@flags_longform = ["text", "version"]
 
 		# Default settings
 		@shell = ENV["SHELL"] || "/bin/sh"
 		@should_execute = true
+		@delimiter = "[!]"
 	end
 	
 	def run()
 		abort("No command provided!") unless @args.size >= 1
 		parse_parameters()
 		inject()
-		exec_command() if @should_execute
+		if @should_execute
+			exec_command
+		else
+			puts @command_string
+		end
+		
 	end
 
 	def parse_parameters()
@@ -35,28 +47,29 @@ class Injector
 		# @args are parameters. Used later to strip parameters off
 		# the main command.
 		num_arguments = 0
+
+		# We will use this flag to keep track of two things - firstly,
+		# if flags are passed in a block of single letters ("-fdav"),
+		# only one parameter can be used. If more than one is used,
+		# the command is invalid. Secondly, this allows us to not parse
+		# the parameter if it has been used.
+		param_used = false;
+
 		# Injector#run guarantees that @args.size >= 1 here.
 		(0...@args.size).each do |index|
-			# We will use this flag to keep track of two things - firstly,
-			# if flags are passed in a block of single letters ("-fdav"),
-			# only one parameter can be used. If more than one is used,
-			# the command is invalid. Secondly, this allows us to not parse
-			# the parameter if it has been used.
-			param_used = false;
+			# If param_used was set true last iteration,
+			# we are currently about to process a parameter.
+			# We don't want to do that, of course, so we'll skip.
+			if param_used
+				param_used = false;
+				next;
+			end
 
 			# Check to see if the first character of the argument
 			# is a dash. If it is, we are parsing a flag.
 			# This iterator will halt as soon as we are no longer
 			# reading flags.
 			if @args[index][0] == '-'
-				# If param_used was set true last iteration,
-				# we are currently about to process a parameter.
-				# We don't want to do that, of course, so we'll skip.
-				if param_used
-					param_used = false;
-					next;
-				end
-
 				# It was guaranteed that there was at least one
 				# character in this argument, but we have to
 				# make sure there is a second.
@@ -142,20 +155,26 @@ class Injector
 				# the command body.
 
 				num_arguments = index
+				break
 			end
 		end
 
-		@args.delete_at(0, num_arguments - 1)
+		@args.delete_at(0, num_arguments)
 	end
 
 	def use_parameter(name : String | Char, value : String | Nil)
 		case name
 		when "text", 't'
-			puts "text"
+			@should_execute = false
 		when "shell", 's'
-			puts "shell"
+			if value
+				@shell = value
+			end
 		when "delimiter", 'd'
-			puts "delimiter"
+			puts "delimiter: #{value}"
+			if value
+				@delimiter = value
+			end
 		end
 	end
 
@@ -164,13 +183,17 @@ class Injector
 		# we have to take our tokenized array, ["which", "looks", "like", "this"],
 		# and rejoin it with whitespace. As terminals are whitespace-agnostic,
 		# we don't have to worry about if the words were divided with tabs or spaces.
-		# I'm using spaces here as that's generally what's desired.
-		@command_string = @args.join(" ")
+		# I'm using spaces here as that's generally what's desired. This step also
+		# performs the substitution, replacing all instances of the delimiter
+		# with whatever was piped into this bad boy.
+		@command_string = @args.join(" ").gsub(@delimiter, @content)
 
-
+		# Surprisingly easy! Thanaaaanks, crystal <3
 	end
 
 	def exec_command()
+		#system "#{@shell || "/bin/sh"} #{@command_string}"
+		Process.run(command: @shell, args: Array(String).new(1, @command_string), output: STDOUT, error: STDERR)
 	end
 end
 
