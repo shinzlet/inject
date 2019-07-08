@@ -187,8 +187,8 @@ class Injector
 				@delimiter = value
 			end
 		when "version", 'v'
-			puts "inject version #{@@version}"
-			puts "written by Seth Hinz (shinzlet)"
+			printf "inject version #{@@version}\n"
+			printf "written by Seth Hinz (shinzlet)"
 		end
 	end
 
