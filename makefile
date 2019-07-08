@@ -1,9 +1,15 @@
+MAN_DIR := /usr/share/man/man1
+BIN_DIR := /usr/bin
+
 build:
 	crystal build inject.cr
-	gzip inject.1
+	gzip --keep inject.1
 install: build
-	cp inject /usr/bin/inject
-	cp inject.1.gz /usr/share/man/man1/
+	cp inject $(BIN_DIR)
+	cp inject.1.gz $(MAN_DIR)
 uninstall:
-	rm /usr/bin/inject
-	rm /usr/share/man/man1/inject.1.gz
+	[ -f $(BIN_DIR)/inject ] && rm $(BIN_DIR)/inject
+	[ -f $(MAN_DIR)/inject.1.gz ] && rm $(MAN_DIR)/inject.1.gz
+clean:
+	[ -f inject ] && rm inject
+	[ -f inject.1.gz ] && rm -f inject.1.gz
