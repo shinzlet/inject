@@ -1,5 +1,5 @@
-MAN_DIR := /usr/share/man/man1
-BIN_DIR := /usr/bin
+MAN_DIR := $(DESTDIR)/usr/share/man/man1
+BIN_DIR := $(DESTDIR)/usr/bin
 
 build:
 	crystal build inject.cr
