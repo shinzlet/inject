@@ -21,8 +21,8 @@ class Injector
 		@param_flags_longform = ["shell", "delimiter"]
 
 		# Flags that do not require a parameter are listed here
-		@flags = ['t', 'v']
-		@flags_longform = ["text", "version"]
+		@flags = ['t', 'v', 'h']
+		@flags_longform = ["text", "version", "help"]
 
 		# Default settings
 		@shell = ENV["SHELL"] || "/bin/sh"
@@ -189,6 +189,10 @@ class Injector
 		when "version", 'v'
 			printf "inject version #{@@version}\n"
 			printf "written by Seth Hinz (shinzlet)"
+			exit
+		when "help", 'h'
+			system "man inject"
+			exit
 		end
 	end
 
