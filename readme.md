@@ -19,6 +19,13 @@ substitution (which seems to be different in every shell), xargs magic, and
 other unix tricks.
 
 ## Installation
+### Using the AUR
+Run
+```bash
+yay inject-git
+```
+or an equivalent (such as yaourt) to install [inject-git](https://aur.archlinux.org/packages/inject-git/) from the arch user repository.
+### Compile & Install manually
 It's pretty simple! Just install Crystal, clone the repo, and run sudo make
 install.
 ```bash
