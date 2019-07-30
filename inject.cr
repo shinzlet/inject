@@ -182,7 +182,6 @@ class Injector
 				@shell = value
 			end
 		when "delimiter", 'd'
-			puts "delimiter: #{value}"
 			if value
 				@delimiter = value
 			end
