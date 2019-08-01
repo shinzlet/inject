@@ -1,7 +1,6 @@
 class Injector
 	@content : String
 	@delimiter : String
-	@command_string : String
 	@shell : String
 	@@version : String = "0.1"
 
@@ -12,32 +11,41 @@ class Injector
 		@content = (STDIN.gets_to_end unless STDIN.tty?) || ""
 		@args = argv
 
-		# This is the variable that will hold the subsituted command
-		# after we finish parsing and injecting.
-		@command_string = ""
-		
 		# Flags that require a parameter are listed here
 		@param_flags = ['s', 'd']
 		@param_flags_longform = ["shell", "delimiter"]
 
 		# Flags that do not require a parameter are listed here
-		@flags = ['t', 'v', 'h']
-		@flags_longform = ["text", "version", "help"]
+		@flags = ['t', 'v', 'h', 'b']
+		@flags_longform = ["text", "version", "help", "block"]
 
 		# Default settings
 		@shell = ENV["SHELL"] || "/bin/sh"
 		@should_execute = true
 		@delimiter = "[!]"
+		@block_mode = false
 	end
 	
 	def run()
-		abort("No command provided!") unless @args.size >= 1
+		# If no arguments are provided, print a version and exit.
+		use_parameter('v', nil) unless @args.size >= 1
+
 		parse_parameters()
-		inject()
-		if @should_execute
-			exec_command
+		lines : Array(String)
+		
+		if @block_mode
+			lines = [@content]
 		else
-			puts @command_string
+			lines = @content.split('\n', remove_empty: true)
+		end
+
+		lines.each do |line|
+			command = inject(line)
+			if @should_execute
+				exec_command(command)
+			else
+				puts command
+			end
 		end
 		
 	end
@@ -187,15 +195,17 @@ class Injector
 			end
 		when "version", 'v'
 			printf "inject version #{@@version}\n"
-			printf "written by Seth Hinz (shinzlet)"
+			printf "written by Seth Hinz (shinzlet)\n"
 			exit
 		when "help", 'h'
 			system "man inject"
 			exit
+		when "block", 'b'
+			@block_mode = true
 		end
 	end
 
-	def inject()
+	def inject(content : String)
 		# As this program accepts a shell command instead of just arguments,
 		# we have to take our tokenized array, ["which", "looks", "like", "this"],
 		# and rejoin it with whitespace. As terminals are whitespace-agnostic,
@@ -203,14 +213,14 @@ class Injector
 		# I'm using spaces here as that's generally what's desired. This step also
 		# performs the substitution, replacing all instances of the delimiter
 		# with whatever was piped into this bad boy.
-		@command_string = @args.join(" ").gsub(@delimiter, @content)
+		return @args.join(" ").gsub(@delimiter, content)
 
 		# Surprisingly easy! Thanaaaanks, crystal <3
 	end
 
-	def exec_command()
-		#system "#{@shell || "/bin/sh"} #{@command_string}"
-		args : Array(String) = ["-c", @command_string]
+	def exec_command(command : String)
+		#system "#{@shell || "/bin/sh"} #{command}"
+		args : Array(String) = ["-c", command]
 		Process.run(command: @shell, args: args, output: STDOUT, error: STDERR)
 	end
 end
