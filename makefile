@@ -5,7 +5,7 @@ MAN_DIR := $(DESTDIR)usr/share/man/man1
 BIN_DIR := $(DESTDIR)usr/bin
 
 build:
-	crystal build inject.cr
+	crystal build inject.cr --threads=1
 	gzip -f --keep inject.1
 install: build
 	mkdir -p $(BIN_DIR)
